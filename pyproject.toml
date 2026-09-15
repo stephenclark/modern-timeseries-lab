@@ -28,7 +28,6 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
@@ -45,3 +44,14 @@ select = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "tsportfolio"
+module-root = "src"
+
+[tool.uv]
+preview-features = ["centralized-project-envs"]
