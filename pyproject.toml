@@ -1,0 +1,47 @@
+[project]
+name = "modern-timeseries-lab"
+version = "0.1.0"
+description = "A portfolio laboratory for modern time-series forecasting"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "numpy",
+    "pandas",
+    "polars",
+    "pyarrow",
+    "duckdb",
+    "matplotlib",
+    "scipy",
+    "statsmodels",
+    "scikit-learn",
+    "jupyterlab",
+    "ipykernel",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+]
+
+[tool.ruff.format]
+quote-style = "double"
