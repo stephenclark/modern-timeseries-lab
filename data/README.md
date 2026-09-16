@@ -1,83 +1,233 @@
-# Data
+# Chapter 00: Engineering a Reproducible Forecasting Project
 
-Large datasets are deliberately excluded from Git.
+Before fitting a forecasting model, this chapter establishes the engineering
+rules used throughout the portfolio.
 
-The repository should contain the instructions and metadata required to obtain
-and reproduce data, rather than becoming a warehouse for source files.
+The goal is not infrastructure for infrastructure's sake. Time-series analysis
+is particularly vulnerable to subtle errors such as temporal leakage, revised
+historical observations, non-reproducible notebooks, and inconsistent
+train/test boundaries.
 
-## Directory convention
+Engineering discipline is therefore part of the statistical method.
 
-### `raw/`
+## Learning objectives
 
-Immutable data exactly as obtained from the source.
+By the end of this chapter you should be able to:
 
-Do not manually edit files in this directory.
+- reproduce the Python environment from `uv.lock`;
+- explain what belongs in Git and what should stay outside it;
+- run identical quality checks locally and in CI;
+- capture enough environment information to reproduce an experiment;
+- distinguish raw, interim and modelling-ready data;
+- explain several common forms of time-series leakage;
+- use branches and pull requests as part of an analytical workflow.
 
-### `interim/`
+## 1. Reproduce the environment
 
-Intermediate transformations that are useful during processing but are not
-yet modelling-ready.
+The project uses `uv`.
 
-### `processed/`
+From a clean checkout:
 
-Clean, validated datasets suitable for analysis or modelling.
+```bash
+uv sync --locked
+```
 
-### `sample/`
+Run commands inside the managed environment:
 
-Small datasets and fixtures that are safe to commit to Git and useful for
-examples and automated tests.
+```bash
+uv run python
+uv run pytest
+uv run ruff check .
+```
 
-## Provenance requirements
+The lock file is committed because dependency versions are part of the
+research record.
 
-Each external dataset should document, where applicable:
+## 2. Git stores instructions, not warehouses
 
-- dataset name;
-- publisher;
-- source URL or API endpoint;
-- retrieval date;
-- licence or reuse conditions;
-- geographic coverage;
-- temporal coverage;
-- frequency;
-- units;
-- source-series identifiers;
-- transformations applied;
-- whether historical observations may be revised;
-- checksum for downloaded source files where useful.
+Commit:
 
-A suggested metadata record is:
+- source code;
+- notebooks that are useful analytical artefacts;
+- small test datasets;
+- configuration;
+- documentation;
+- data provenance;
+- compact tables and selected figures where appropriate.
 
-```yaml
-dataset: abs_labour_force
-publisher: Australian Bureau of Statistics
-source_url: null
-retrieved_at: null
-licence: null
+Do not commit:
 
-coverage:
-  geography: Australia
-  start: null
-  end: null
-  frequency: monthly
+- large raw datasets that can be recreated;
+- model caches;
+- checkpoints;
+- `.venv`;
+- working DuckDB databases;
+- credentials;
+- large generated output directories.
 
-provenance:
-  source_file: null
-  sha256: null
-  revision_sensitive: true
+A good repository should make it possible for another analyst to recreate the
+analysis without requiring Git to contain every byte used during development.
 
-transformations: []
-Time-series warning
+## 3. Raw data is immutable
 
-For forecasting, current historical data is not always equivalent to the data
-available at a historical forecast date.
+Files in:
 
-Economic and labour-market statistics may be revised after publication.
+```text
+data/raw/
+```
 
-Later chapters will distinguish:
+represent source evidence.
 
-latest-vintage historical data;
-real-time/vintage data;
-historical covariates;
-genuinely known-future covariates.
+Transformations create new products in:
 
-This distinction is essential for avoiding hindsight leakage.
+```text
+data/interim/
+data/processed/
+```
+
+rather than silently modifying source files.
+
+This becomes particularly important with official statistics because historical
+values can be revised after publication.
+
+## 4. Notebooks explain; packages implement
+
+Jupyter notebooks are encouraged in this portfolio because exploration,
+visualisation and narrative are important parts of the learning process.
+
+Reusable logic belongs in:
+
+```text
+src/tsportfolio/
+```
+
+A useful rule:
+
+> If the same function is needed by a second notebook, it probably belongs in
+> `src/`.
+
+## 5. Every forecast has an information boundary
+
+Before training a model, explicitly identify:
+
+- forecast origin;
+- forecast horizon;
+- target observations available at the origin;
+- historical-only covariates;
+- genuinely known-future covariates;
+- publication delays;
+- revised data.
+
+These distinctions become formal modelling contracts later in the course.
+
+## 6. Local quality gate
+
+Before committing:
+
+```bash
+make check
+```
+
+or equivalently:
+
+```bash
+uv run ruff check .
+uv run pytest
+```
+
+## 7. Continuous integration
+
+GitHub Actions runs the same checks for pushes and pull requests.
+
+The CI workflow deliberately stays small.
+
+It does not download large foundation models or execute GPU training jobs.
+Later chapters will test forecasting interfaces using tiny fixtures and leave
+expensive experiments as explicit research runs.
+
+## 8. Inspect the environment
+
+Run:
+
+```bash
+make environment
+```
+
+This reports:
+
+- Python version;
+- operating system;
+- architecture;
+- Git branch;
+- commit;
+- working-tree state;
+- key package versions.
+
+Later we will extend this into experiment metadata including model version,
+dataset version, forecast horizon, context length, covariates, random seed,
+runtime and hardware.
+
+## Exercise 00.1: rebuild the laboratory
+
+Delete the local environment:
+
+```bash
+rm -rf .venv
+```
+
+Then recreate it:
+
+```bash
+uv sync --locked
+make check
+```
+
+The project should recover without manually reinstalling packages.
+
+## Exercise 00.2: identify leakage
+
+Write down three examples of information leakage in an economic forecasting
+problem.
+
+For each example explain:
+
+1. what information leaked;
+2. why it would not have been available at the historical forecast origin;
+3. why the resulting validation score would be misleading.
+
+Consider:
+
+- subsequently revised official statistics;
+- centred rolling-window features;
+- explanatory variables published after the target month;
+- accidentally fitting scalers against the entire dataset.
+
+## Exercise 00.3: inspect Git history
+
+Run:
+
+```bash
+git status
+git branch
+git log --oneline --decorate --graph --all
+```
+
+Identify:
+
+- the current branch;
+- its upstream remote;
+- where it diverged from `main`;
+- which project files are intentionally ignored.
+
+## Definition of done
+
+Chapter 00 is complete when:
+
+- `uv sync --locked` succeeds;
+- `uv run ruff check .` succeeds;
+- `uv run pytest` succeeds;
+- `make environment` succeeds;
+- GitHub Actions passes;
+- the pull request is reviewed and merged into `main`.
+
+Once that is true, the forecasting work can begin on a reproducible foundation.
