@@ -24,6 +24,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "ruff",
+    "tornado==6.5.8",
 ]
 
 [tool.pytest.ini_options]
