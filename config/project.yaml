@@ -1,0 +1,28 @@
+project:
+  name: modern-timeseries-lab
+  python: "3.12"
+  timezone: Australia/Brisbane
+
+research:
+  random_seed: 42
+
+paths:
+  raw_data: data/raw
+  interim_data: data/interim
+  processed_data: data/processed
+  sample_data: data/sample
+  models: models
+  figures: outputs/figures
+  tables: outputs/tables
+  forecasts: outputs/forecasts
+
+forecasting:
+  default_quantiles:
+    - 0.1
+    - 0.5
+    - 0.9
+
+reproducibility:
+  immutable_raw_data: true
+  commit_lock_file: true
+  require_temporal_validation: true
